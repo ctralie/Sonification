@@ -108,4 +108,5 @@ def do_2D_synthetic_test():
     plt.scatter(G[:, 0], G[:, 1], c = np.arange(G.shape[0]))
     plt.show()
 
-do_2D_synthetic_test()
+if __name__ == '__main__':
+    do_2D_synthetic_test()
