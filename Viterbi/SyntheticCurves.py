@@ -61,30 +61,6 @@ def applyRandomRigidTransformation(X, special = False):
     R, T = getRandomRigidTransformation(dim, np.std(X))
     return CM[None, :] + np.dot(X, R) + T[None, :]
 
-def addGaussianNoise(X, Kappa, NRelMag):
-    N = X.shape[0]
-    MeanDist = getMeanDistNeighbs(X, Kappa)
-    return X + NRelMag*MeanDist[:, None]*np.random.randn(N, X.shape[1])
-
-def addRandomBumps(X, Kappa, NRelMag, NBumps):
-    N = X.shape[0]
-    Y = np.array(X)
-    MeanDist = getMeanDistNeighbs(X, Kappa)
-    Bumps = np.zeros((NBumps, X.shape[1]))
-    for i in range(NBumps):
-        idx = np.random.randint(N)
-        u = np.random.randn(1, X.shape[1])
-        u = u/np.sqrt(np.sum(u**2))
-        x = Y[idx, :] + MeanDist[idx]*NRelMag*u
-        Bumps[i, :] = x
-        diff = -Y+x
-        distSqr = np.sum(diff**2, 1)
-        idx = np.argmin(distSqr)
-        t = (idx - np.arange(N))/(N*Kappa)
-        sigma = np.sqrt(distSqr[idx])/np.sqrt(-np.log(0.9))
-        Y += diff*np.exp(-t**2)[:, None]*np.exp(-distSqr/(sigma**2))[:, None]
-    return (Y, Bumps)
-
 def smoothCurve(X, Fac):
     """
     Use splines to smooth the curve
