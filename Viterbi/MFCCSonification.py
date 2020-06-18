@@ -10,7 +10,7 @@ if __name__ == '__main__':
     pca = PCA(n_components=2)
     S = pca.fit_transform(S)    
     
-    t = np.linspace(0, 1, 10000)
+    t = np.linspace(0, 1, 1000)
     Y = get2DFigure8(t)
     
     Y = Y*25
@@ -27,3 +27,11 @@ if __name__ == '__main__':
     G = S[X, :]
     plt.scatter(G[:, 0], G[:, 1], c = np.arange(G.shape[0]))
     plt.show()
+    
+    H = X*hop
+    SL = 500
+    PA = []
+    for i in range(0,len(H),1):
+        for j in range(0,SL,1):
+            q = x[H[i]+j]
+            PA.append(q)
