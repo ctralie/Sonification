@@ -5,7 +5,8 @@ Created on Tue Jun 16 16:44:22 2020
 
 @author: michaeltecce
 """
-
+import sys
+sys.path.append("..")
 from SyntheticCurves import *
 import numpy as np
 import matplotlib.pyplot as plt
