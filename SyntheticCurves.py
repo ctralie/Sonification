@@ -64,9 +64,16 @@ def applyRandomRigidTransformation(X, special = False):
 def smoothCurve(X, Fac):
     """
     Use splines to smooth the curve
-    :param X: Nxd matrix representing a time-ordered point cloud
-    :param Fac: Smoothing factor
-    :return Y: An (NxFac)xd matrix of a smoothed, upsampled point cloud
+    Parameters
+    ----------
+    X: ndarray(N, d)
+        A matrix representing a time-ordered point cloud
+    Fac: int
+        Smoothing factor
+    Returns
+    -------
+    Y: ndarray(N*Fac, d)
+        An (NxFac)xd matrix of a smoothed, upsampled point cloud
     """
     NPoints = X.shape[0]
     dim = X.shape[1]
@@ -84,13 +91,31 @@ def smoothCurve(X, Fac):
     Y = Y[2*Fac:-2*Fac, :]
     return Y
 
+###################################################
+#               Curve Families                    #
+###################################################
+
+#Note: All function assume the parameterization is given
+#in the interval [0, 1]
+
+###########################################
+##########  Arbitrary Dimensions   ########
+###########################################
 def makeRandomWalkCurve(res, NPoints, dim):
     """
     Make a random walk curve with "NPoints" in dimension "dim"
-    :param res: An integer specifying the resolution of the random walk grid
-    :param NPoints: Number of points in the curve
-    :param dim: Dimension of the ambient Euclidean space of the curve
-    :return X
+    Parameters
+    ----------
+    res: int
+        An integer specifying the resolution of the random walk grid
+    NPoints: int
+        Number of points in the curve
+    dim: int
+        Dimension of the ambient Euclidean space of the curve
+    Returns
+    -------
+    X: ndarray(NPoints, dim)
+        The final point cloud
     """
     #Enumerate all neighbors in hypercube via base 3 counting between [-1, 0, 1]
     Neighbs = np.zeros((3**dim, dim))
@@ -122,20 +147,37 @@ def makeRandomWalkCurve(res, NPoints, dim):
         X[ii, :] = N[np.random.choice(N.shape[0], 1), :]
     return X
 
-###################################################
-#               Curve Families                    #
-###################################################
 
-#Note: All function assume the parameterization is given
-#in the interval [0, 1]
-
-
-#######2D Curves
-def getLissajousCurve(A, B, a, b, delta, pt):
+###########################################
+##############   2D Curves   ##############
+###########################################
+def getLissajousCurve(a, b, pt, A = 1, B = 1, delta = 0):
     """
     Return the curve with
     x = Asin(at + delta)
     y = Bsin(bt)
+    More info here
+    https://mathworld.wolfram.com/LissajousCurve.html
+    Parameters
+    ----------
+    a: int
+        Radian frequency of first dimension
+    b: int
+        Radian frequency of second dimension
+    pt: ndarray(N)
+        The time parameters at which to sample these loops.  They
+        will complete a loop on all intervals of length 1, and the
+        principal loop occurs on [0, 1]
+    A: int
+        Amplitude of first sinusoid (default 1)
+    B: int
+        Amplitude of second sinusoid (default 2)
+    delta: float
+        Phase shift of first sinusoid (default 0)
+    Returns
+    -------
+    X: ndarray(N, 2)
+        The final sampled points
     """
     N = len(pt)
     t = 2*np.pi*pt
@@ -145,12 +187,36 @@ def getLissajousCurve(A, B, a, b, delta, pt):
     return X
 
 def get2DFigure8(pt):
-    """Return a figure 8 curve parameterized on [0, 1]"""
-    return getLissajousCurve(1, 1, 1, 2, 0, pt)
+    """
+    Return a figure 8 curve parameterized on [0, 1]
+    Parameters
+    ----------
+    pt: ndarray(N)
+        The time parameters at which to sample the figure 8.
+        It completes a loop on all intervals of length 1, and the
+        principal loop occurs on [0, 1]
+    Returns
+    -------
+    X: ndarray(N, 2)
+        Point cloud in 2 dimensions
+    """
+    return getLissajousCurve(1, 2, pt)
 
 
 def getPinchedCircle(pt):
-    """Return a pinched circle paramterized on [0, 1]"""
+    """
+    Return a pinched circle paramterized on [0, 1]
+    Parameters
+    ----------
+    pt: ndarray(N)
+        The time parameters at which to sample the figure 8.
+        It completes a loop on all intervals of length 1, and the
+        principal loop occurs on [0, 1]
+    Returns
+    -------
+    X: ndarray(N, 2)
+        Point cloud in 2 dimensions
+    """
     N = len(pt)
     t = 2*np.pi*pt
     X = np.zeros((N, 2))
@@ -159,6 +225,22 @@ def getPinchedCircle(pt):
     return X
 
 def getEpicycloid(R, r, pt):
+    """
+    Return an epicycloid parameterized on [0, 1]
+    More info here: https://en.wikipedia.org/wiki/Epicycloid
+    Parameters
+    ----------
+    R: float
+        Outer radius/frequency
+    r: float
+        Inner radius/frequency
+    pt: ndarray(N)
+        The time parameters at which to sample this curve
+    Returns
+    -------
+    ndarray(N, 2)
+        The sampled point cloud
+    """
     N = len(pt)
     t = 2*np.pi*pt
     X = np.zeros((N, 2))
@@ -169,7 +251,7 @@ def getEpicycloid(R, r, pt):
 def getTschirnhausenCubic(a, pt):
     """
     Return the plane curve defined by the polar equation
-    r = asec^3(theta/3)
+    r = asec^3(theta/3), which makes a ribbon shape
     """
     N = len(pt)
     t = 5*(pt-0.5)
@@ -179,6 +261,8 @@ def getTschirnhausenCubic(a, pt):
     X = 2*X/np.max(np.abs(X))
     return X
 
-
-
-
+if __name__ == '__main__':
+    pt = np.linspace(0, 1, 1000)
+    X = getEpicycloid(3, 1, pt)
+    plt.scatter(X[:, 0], X[:, 1], c=pt)
+    plt.show()
