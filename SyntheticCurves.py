@@ -261,8 +261,93 @@ def getTschirnhausenCubic(a, pt):
     X = 2*X/np.max(np.abs(X))
     return X
 
+
+###########################################
+##############   3D Curves   ##############
+###########################################
+
+def getVivianiFigure8(a, pt):
+    """
+    Return the curve that results from the intersection of
+    a sphere of radius 2a centered at the origin and a cylinder
+    centered at (a, 0, 0) of radius a (the figure 8 I have is
+    a 2D projection of this)
+    Parameters
+    ----------
+    a: float
+        Radius of the sphere
+    pt: ndarray(N)
+        The time parameters at which to sample this curve
+    Returns
+    -------
+    X: ndarray(N, 3)
+        The points sampled on the curve
+    """
+    N = len(pt)
+    t = 4*np.pi*pt - np.pi
+    X = np.zeros((N, 3))
+    X[:, 0] = a*(1+np.cos(t))
+    X[:, 1] = a*np.sin(t)
+    X[:, 2] = 2*a*np.sin(t/2)
+    return X
+
+
+def getTorusKnot(p, q, pt):
+    """
+    Return a p-q torus not parameterized on [0, 1]
+    Parameters
+    ----------
+    p: int
+        Radian frequency around large torus loop
+    q: int
+        Radian frequency around small torus loop
+    pt: ndarray(N)
+        The time parameters at which to sample this curve
+    Returns
+    -------
+    X: ndarray(N, 3)
+        Points sampled on the curve
+    """
+    N = len(pt)
+    t = 2*np.pi*pt
+    X = np.zeros((N, 3))
+    r = np.cos(q*t) + 2
+    X[:, 0] = r*np.cos(p*t)
+    X[:, 1] = r*np.sin(p*t)
+    X[:, 2] = -np.sin(q*t)
+    return X
+
+def getConeHelix(c, NPeriods, pt):
+    """
+    Return a helix wrapped around a double ended cone
+    Parameters
+    ----------
+    c: float
+        Half the maximum radius of the cone on the interval [0, 1]
+    NPeriods: int
+        Number of times to wrap around the cones
+    pt: ndarray(N)
+        The time parameters at which to sample this curve
+    Returns
+    -------
+    X: ndarray(N, 3)
+        Points sampled on the curve
+    """
+    N = len(pt)
+    t = NPeriods*2*np.pi*pt
+    zt = c*(pt-0.5)
+    r = zt
+    X = np.zeros((N, 3))
+    X[:, 0] = r*np.cos(t)
+    X[:, 1] = r*np.sin(t)
+    X[:, 2] = zt
+    return X
+
 if __name__ == '__main__':
-    pt = np.linspace(0, 1, 1000)
-    X = getEpicycloid(3, 1, pt)
-    plt.scatter(X[:, 0], X[:, 1], c=pt)
+    from mpl_toolkits.mplot3d import Axes3D
+    t = np.linspace(0, 1, 1000)
+    X = getConeHelix(1, 20, t)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=t)
     plt.show()
