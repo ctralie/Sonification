@@ -5,10 +5,10 @@ from sklearn.decomposition import PCA
 if __name__ == '__main__':
     hop = 512
     x, sr = librosa.load("lincoln1.mp3")
-    S = librosa.feature.mfcc(y=x, sr=sr, hop_length=hop, htk=True).T
+    T = librosa.feature.mfcc(y=x, sr=sr, hop_length=hop, htk=True).T
 
     pca = PCA(n_components=2)
-    S = pca.fit_transform(S)    
+    S = pca.fit_transform(T)    
     
     t = np.linspace(0, 1, 1000)
     Y = get2DFigure8(t)
