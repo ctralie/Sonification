@@ -310,9 +310,9 @@ class SlidingWindowAnimator(animation.FuncAnimation):
         self.rightLim.set_color(c)
         Y = self.Y
         if Y.shape[1] == 2:
-            self.ax2.scatter(Y[idxs, 0], Y[idxs, 1], c=c[None, :])
+            self.ax2.scatter(Y[idxs, 0], Y[idxs, 1], c=c)
         elif Y.shape[1] >= 3:
-            self.ax2.scatter(Y[idxs, 0], Y[idxs, 1], Y[idxs, 2], c=c[None, :])
+            self.ax2.scatter(Y[idxs, 0], Y[idxs, 1], Y[idxs, 2], c=c)
 
 
 def doSinesExample():

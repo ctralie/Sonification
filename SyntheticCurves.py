@@ -346,7 +346,7 @@ def getConeHelix(c, NPeriods, pt):
 if __name__ == '__main__':
     from mpl_toolkits.mplot3d import Axes3D
     t = np.linspace(0, 1, 1000)
-    X = getConeHelix(1, 20, t)
+    X = getVivianiFigure8(2, t)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=t)
