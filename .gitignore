@@ -1,13 +1,8 @@
-<<<<<<< HEAD
-*.DS_Store
-*.pyc
-=======
 *.mp4
 *.pyc
 *.png
 *.DS_Store
-*__pycache__*
+__pycache__/
 *checkpoint.ipynb
 Results/*
 Data/*
->>>>>>> 023273dd4bddc42395a13fdaa277ba4037cf0e3c
