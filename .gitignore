@@ -1,0 +1,8 @@
+*.mp4
+*.pyc
+*.png
+*.DS_Store
+*__pycache__*
+*checkpoint.ipynb
+Results/*
+Data/*
