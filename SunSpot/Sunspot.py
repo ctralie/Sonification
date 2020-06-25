@@ -10,34 +10,46 @@ Created on Tue Jun 23 16:03:13 2020
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-from SlidingWindow import*
 from sklearn.decomposition import PCA
-
+import sys
+sys.path.append("..")
+from SlidingWindow import*
 
 def extractData():
     data = np.loadtxt("./SSD.txt",dtype = float)
     return data[:,4]
 
-def interpData(A):
-    x = np.linspace(0, 1, len(A))
+def interpData(A, fac):
+    """
+    A: ndarray(N)
+        Array of data
+    fac: float
+        Factor by which to resample.
+        If > 1, upsampling
+        If < 1, downsampling
+    """
+    N = len(A)
+    x = np.linspace(0, 1, N)
     f = interpolate.interp1d(x,A)
-    B = f(x)
+    xnew = np.linspace(0, 1, int(fac*N))
+    B = f(xnew)
     return B   
 
 def goSinGo(B):
-    C = np.linspace(0,1,len(B)*50)
+    sM = 10
+    C = np.linspace(0,1,len(B)*sM)
     tI = 0
-    for i in range(len(B)):
-        for j in range(50):
+    for i in range(len(sM)):
+        for j in range(10):
             C[tI] = B[i]
             tI += 1
-    return C        
+    return C
         
 def doSlidingWindow(C):
     Tau = 10
     dim = 40
     dT = 1
-    x = np.cos(C)
+    x = np.cos(C)*(C/np.max(C))
     D = getSlidingWindow(x,dim,Tau,dT)
     return D
 
@@ -55,12 +67,13 @@ def applyAmpMod(E):
     return F
     
 
-A = extractData()
-B = interpData(A)
-C = goSinGo(B)
-D = doSlidingWindow(c)
-E = doDimRedux(D)
-F = applyAmpMod(E)
+if __name__ == '__main__':
+    A = extractData()
+    B = interpData(A)
+    C = goSinGo(B)
+    D = doSlidingWindow(C)
+    E = doDimRedux(D)
+    F = applyAmpMod(E)
 
 
 
