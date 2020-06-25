@@ -24,33 +24,43 @@ def interpData(A):
     B = f(x)
     return B   
 
-def doSlidingWindow(B):
+def goSinGo(B):
+    C = np.linspace(0,1,len(B)*50)
+    tI = 0
+    for i in range(len(B)):
+        for j in range(50):
+            C[tI] = B[i]
+            tI += 1
+    return C        
+        
+def doSlidingWindow(C):
     Tau = 10
     dim = 40
     dT = 1
-    x = np.cos(B)
-    C = getSlidingWindow(x,dim,Tau,dT)
-    return C
-
-def doDimRedux(C):
-    pca = PCA(n_components = 10)
-    D = pca.fit_transform(C)
+    x = np.cos(C)
+    D = getSlidingWindow(x,dim,Tau,dT)
     return D
 
-def applyAmpMod(D):
-    W = 1
-    E = np.zeros(D.shape[0])
-    for i in range(D.shape[1]):
-        E += np.sin(2*np.pi*D[:,i])
-        W += 1
+def doDimRedux(D):
+    pca = PCA(n_components = 10)
+    E = pca.fit_transform(D)
     return E
+
+def applyAmpMod(E):
+    W = 1
+    F = np.zeros(E.shape[0])
+    for i in range(E.shape[1]):
+        F+= np.sin(2*np.pi*E[:,i])
+        W += 1
+    return F
     
 
 A = extractData()
 B = interpData(A)
-C = doSlidingWindow(B)
-D = doDimRedux(C)
-E = applyAmpMod(D)
+C = goSinGo(B)
+D = doSlidingWindow(c)
+E = doDimRedux(D)
+F = applyAmpMod(E)
 
 
 
