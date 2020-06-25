@@ -30,7 +30,7 @@ def interpData(A, fac):
     """
     N = len(A)
     x = np.linspace(0, 1, N)
-    f = interpolate.interp1d(x,A)
+    f = interpolate.interp1d(x,A,kind='cubic')
     xnew = np.linspace(0, 1, int(fac*N))
     B = f(xnew)
     return B   
@@ -39,8 +39,8 @@ def goSinGo(B):
     sM = 10
     C = np.linspace(0,1,len(B)*sM)
     tI = 0
-    for i in range(len(sM)):
-        for j in range(10):
+    for i in range(len(B)):
+        for j in range(sM):
             C[tI] = B[i]
             tI += 1
     return C
@@ -58,11 +58,11 @@ def doDimRedux(D):
     E = pca.fit_transform(D)
     return E
 
-def applyAmpMod(E):
+def apply_freq_mod(E):
     W = 1
     F = np.zeros(E.shape[0])
     for i in range(E.shape[1]):
-        F+= np.sin(2*np.pi*E[:,i])
+        F+= np.sin(2*np.pi*W*E[:,i])
         W += 1
     return F
     
