@@ -9,24 +9,48 @@ Created on Tue Jun 23 16:03:13 2020
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import interpolate
+from SlidingWindow import*
+from sklearn.decomposition import PCA
 
 
-def extractData(data):
-    lD = len(data)
-    A = np.ndarray((lD,1))
-    A = data[:,4]
-    return A
+def extractData():
+    data = np.loadtxt("./SSD.txt",dtype = float)
+    return data[:,4]
 
-def applySinWaveGo(A):
-    t = np.linspace(0,len(A),len(A))
-    for i in range(len(A)):
-        t[i] = A[i]
+def interpData(A):
+    x = np.linspace(0, 1, len(A))
+    f = interpolate.interp1d(x,A)
+    B = f(x)
+    return B   
+
+def doSlidingWindow(B):
+    Tau = 10
+    dim = 40
+    dT = 1
+    x = np.cos(B)
+    C = getSlidingWindow(x,dim,Tau,dT)
+    return C
+
+def doDimRedux(C):
+    pca = PCA(n_components = 10)
+    D = pca.fit_transform(C)
+    return D
+
+def applyAmpMod(D):
+    W = 1
+    E = np.zeros(D.shape[0])
+    for i in range(D.shape[1]):
+        E += np.sin(2*np.pi*D[:,i])
+        W += 1
+    return E
     
-    B = np.sin(2*np.pi*440*t)
-    return B
-    
 
-data = np.loadtxt("./SSD.txt",dtype = float)
-A = extractData(data)
-B = applySinWaveGo(A)
-plt.plot(B)
+A = extractData()
+B = interpData(A)
+C = doSlidingWindow(B)
+D = doDimRedux(C)
+E = applyAmpMod(D)
+
+
+
