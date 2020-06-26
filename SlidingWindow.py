@@ -81,6 +81,37 @@ def normalizeWindows(X):
     XRet /= Norm[:, None]
     return XRet
 
+
+def getSlidingWindowNoInterp(x, dim, Tau = 1, dT = 1):
+    """
+    Return a sliding window of a time series, with all
+    samples on the original time series grid
+    Parameters
+    ----------
+    x: ndarray(N)
+        The original time series
+    dim: int
+        Dimension of sliding window (number of lags+1)
+    Tau: int
+        Length between lags, in units of time series
+    dT: int
+        Length between windows, in units of time series
+    Returns
+    -------
+    X: ndarray(N, dim)
+        All sliding windows stacked up
+    """
+    NWindows = len(x)
+    xs = []
+    for i in range(dim):
+        xi = x[Tau*i::dT]
+        xs.append(xi)
+        NWindows = min(NWindows, xi.size)
+    X = np.zeros((NWindows, dim))
+    for i, xi in enumerate(xs):
+        X[:, i] = xi[0:NWindows]
+    return X
+
 def getSlidingWindow(x, dim, Tau, dT):
     """
     Return a sliding window of a time series,
@@ -101,6 +132,9 @@ def getSlidingWindow(x, dim, Tau, dT):
     X: ndarray(N, dim)
         All sliding windows stacked up
     """
+    if type(Tau) is int and type(dT) is int:
+        # Do faster sliding window if everything is on sample
+        return getSlidingWindowNoInterp(x, dim, Tau, dT)
     N = len(x)
     NWindows = int(np.floor((N-dim*Tau)/dT))
     X = np.zeros((NWindows, dim))
@@ -114,29 +148,6 @@ def getSlidingWindow(x, dim, Tau, dT):
             X = X[0:i, :]
             break
         X[i, :] = spl(idxx)
-    return X
-
-def getSlidingWindowNoInterp(x, dim):
-    """
-    Return a sliding window of a time series, with all
-    samples on the original time series grid (Tau=1, dT=1)
-    Parameters
-    ----------
-    x: ndarray(N)
-        The original time series
-    dim: int
-        Dimension of sliding window (number of lags+1)
-    Returns
-    -------
-    X: ndarray(N, dim)
-        All sliding windows stacked up
-    """
-    N = len(x)
-    NWindows = N - dim + 1
-    X = np.zeros((NWindows, dim))
-    idx = np.arange(N)
-    for i in range(NWindows):
-        X[i, :] = x[i:i+dim]
     return X
 
 def getSlidingWindowL2Inverse(X):
