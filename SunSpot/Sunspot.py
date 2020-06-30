@@ -58,15 +58,6 @@ def doDimRedux(D):
     E = pca.fit_transform(D)
     return E
 
-def apply_freq_mod(E):
-    W = 1
-    F = np.zeros(E.shape[0])
-    for i in range(E.shape[1]):
-        F+= np.sin(2*np.pi*W*E[:,i])
-        W += 1
-    return F
-    
-
 if __name__ == '__main__':
     A = extractData()
     B = interpData(A)
