@@ -10,7 +10,10 @@ Created on Tue Jun 23 16:03:13 2020
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
+import IPython.display as ipd # This is a library that allows us to play audio samples in Jupyter
 from sklearn.decomposition import PCA
+import skimage # A library for doing some extra stuff with image processing
+import scipy.io.wavfile as wavfile # We will use this library to load in audio
 import sys
 sys.path.append("..")
 from SlidingWindow import*
@@ -57,6 +60,58 @@ def doDimRedux(D):
     pca = PCA(n_components = 10)
     E = pca.fit_transform(D)
     return E
+
+def apply_freq_mod(Y,freqs):
+    
+    if len(Y.shape) == 1:    
+        minF = np.min(Y)
+        maxF = np.max(Y)
+    
+        setSize = np.absolute(minF) + np.absolute(maxF)
+        freqsSize = freqs[1] - freqs[0]
+        scaleSize = setSize/freqsSize
+        Y = Y / scaleSize
+    
+        newminF = np.min(Y)
+    
+        offsetSize = np.absolute(newminF) + freqs[0]
+        Y += offsetSize
+    else:
+        for i in range(len(freqs)-1):
+            
+            minF = np.min(Y[:,i])
+            maxF = np.max(Y[:,i])
+            
+            setSize = np.absolute(minF) + np.absolute(maxF)
+            freqsSize = freqs[i+1] - freqs[i]
+            scaleSize = setSize/freqsSize
+            Y[:,i] = Y[:,i] / scaleSize
+            
+            newminF = np.min(Y[:,i])
+    
+            offsetSize = np.absolute(newminF) + freqs[i]
+            Y[:,i] += offsetSize
+    
+    return Y
+
+def save_wavfile(filename, fs, x):
+    """
+    Save audio to a wave file
+    Parameters
+    ----------
+    filename: string
+        Name of the file you want to save to
+    fs: int
+        Sample rate
+    x: ndarray(N)
+        Numpy array of audio samples
+    """
+    y = x-np.mean(x)
+    y = y/np.max(np.abs(y))
+    y = np.array(y*32768, dtype=np.int16)
+    print(np.min(y))
+    print(np.max(y))
+    wavfile.write(filename, fs, y)
 
 if __name__ == '__main__':
     A = extractData()
