@@ -61,9 +61,12 @@ def doDimRedux(D):
     E = pca.fit_transform(D)
     return E
 
-def positive_data_scale(arr):
+def positive_data_scale(arr,ran):
     minN = np.min(arr)
-    arr = arr[:] + np.absolute(0 - minN)
+    maxN = np.max(arr)
+    rangeN = np.absolute(minN) + np.absolute(maxN)
+    positive_offset = (ran*rangeN)
+    arr = positive_offset + arr-np.min(arr)
     return arr
     
 def apply_freq_mod(Y,freqs):
