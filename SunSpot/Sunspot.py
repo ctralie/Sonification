@@ -19,49 +19,65 @@ sys.path.append("..")
 from SlidingWindow import*
 
 def extractData():
+    
+    """
+    Takes data from Sunspot Data Sheet
+    """
+    
     data = np.loadtxt("./SSD.txt",dtype = float)
     return data[:,4]
 
-def interpData(A, fac):
+def interpData(arr, fac):
     """
-    A: ndarray(N)
+    Interpolates array by fac
+    
+    arr: ndarray(N)
         Array of data
     fac: float
         Factor by which to resample.
         If > 1, upsampling
         If < 1, downsampling
     """
-    N = len(A)
+    N = len(arr)
     x = np.linspace(0, 1, N)
-    f = interpolate.interp1d(x,A,kind='cubic')
+    f = interpolate.interp1d(x,arr,kind='cubic')
     xnew = np.linspace(0, 1, int(fac*N))
-    B = f(xnew)
-    return B   
+    narr = f(xnew)
+    return narr   
 
-def goSinGo(B):
+def goSinGo(arr):
+    
+    """
+    DEPRICATED
+    
+    Extends Array by duplicating elements sequentially
+    Parameters
+    ----------
+    arr: Array()
+        Array to be extended
+    """
+    
     sM = 10
-    C = np.linspace(0,1,len(B)*sM)
+    narr = np.linspace(0,1,len(arr)*sM)
     tI = 0
-    for i in range(len(B)):
+    for i in range(len(arr)):
         for j in range(sM):
-            C[tI] = B[i]
+            narr[tI] = arr[i]
             tI += 1
-    return C
-        
-def doSlidingWindow(C):
-    Tau = 10
-    dim = 40
-    dT = 1
-    x = np.cos(C)*(C/np.max(C))
-    D = getSlidingWindow(x,dim,Tau,dT)
-    return D
-
-def doDimRedux(D):
-    pca = PCA(n_components = 10)
-    E = pca.fit_transform(D)
-    return E
+    return narr
 
 def positive_data_scale(arr,ran):
+    
+    """
+    Scale Integral Array to set Modulation
+    Parameters
+    ----------
+    arr: Array()
+        array to be scaled
+    ran: Int
+        Factor to Scale By
+    """
+    
     minN = np.min(arr)
     maxN = np.max(arr)
     rangeN = np.absolute(minN) + np.absolute(maxN)
@@ -69,41 +85,54 @@ def positive_data_scale(arr,ran):
     arr = positive_offset + arr-np.min(arr)
     return arr
     
-def apply_freq_mod(Y,freqs):
+def apply_freq_mod(x,freqs):
     
-    if len(Y.shape) == 1:    
-        minF = np.min(Y)
-        maxF = np.max(Y)
+    """
+    Format audio ndarray to a specific frequency ranges
+    Parameters
+    ----------
+    x: ndarray(N)
+        Numpy array of audio samples
+    freqs: array()
+        Array of Logarithmic Spaced Frequency Ranges 
+    """
     
-        setSize = np.absolute(minF) + np.absolute(maxF)
+    if len(x.shape) == 1:    
+        minF = np.min(x)
+        maxF = np.max(x)
+    
+        setSize = maxF - minF
         freqsSize = freqs[1] - freqs[0]
         scaleSize = setSize/freqsSize
-        Y = Y / scaleSize
+        x = x / scaleSize
     
-        newminF = np.min(Y)
+        newminF = np.min(x)
     
         offsetSize = np.absolute(newminF) + freqs[0]
-        Y += offsetSize
+        x += offsetSize
     else:
         for i in range(len(freqs)-1):
             
-            minF = np.min(Y[:,i])
-            maxF = np.max(Y[:,i])
+            minF = np.min(x[:,i])
+            maxF = np.max(x[:,i])
             
-            setSize = np.absolute(minF) + np.absolute(maxF)
+            setSize = maxF - minF
             freqsSize = freqs[i+1] - freqs[i]
             scaleSize = setSize/freqsSize
-            Y[:,i] = Y[:,i] / scaleSize
+            x[:,i] = x[:,i] / scaleSize
             
-            newminF = np.min(Y[:,i])
+            newminF = np.min(x[:,i])
     
             offsetSize = np.absolute(newminF) + freqs[i]
-            Y[:,i] += offsetSize
+            x[:,i] += offsetSize
     
-    return Y
+    return x
 
 def save_wavfile(filename, fs, x):
+    
     """
+    @author: ctralie
+    
     Save audio to a wave file
     Parameters
     ----------
