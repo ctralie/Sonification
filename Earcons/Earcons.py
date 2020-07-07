@@ -11,11 +11,12 @@ import numpy as np
 import sys
 from scipy import interpolate
 sys.path.append("..")
-sys.path.append('../Viterbi')
 from CurvatureTools import *
 from SyntheticCurves import *
+sys.path.append('../SunSpot')
+from Sunspot import positive_data_scale
 
-def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
+def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=0.2,modamp=0.25):
     
     """
     Function to modulate the frequency and amplitude 
@@ -32,10 +33,10 @@ def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
         array of distances form earcon point to every point in X
     s:  int
         number of loops the audio performs
-    modfreq:   bool
-        bool to determine if the frequency is to be modulated
-    modamp:    bool
-        bool to determine if the amplitude is to be modulated
+    modfreq:   float
+        value factor to modulate the audio by (higher the number, less modulation?)
+    modamp:    float
+        value to add to exponential increase/decrease of amplitude
     
     """
     fs = 44100
@@ -45,7 +46,7 @@ def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
     for i in range(s-1):
         AS = np.append(AS,audarr)
     
-    if modfreq == True:
+    if modfreq > 0:
         
         #interpolate speed to size of audio sample
         fac = len(AS)/len(VMag)
@@ -55,6 +56,9 @@ def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
         xnew = np.linspace(0, 1, int(fac*N))
         IS = f(xnew)
 
+        #set mod factor
+        IS = positive_data_scale(IS,modfreq)
+        
         #get cumsum of speed for interpolation
         ISInteg = np.cumsum(IS, axis=0)/fs
         scale = ISInteg[len(ISInteg)-1]
@@ -66,7 +70,7 @@ def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
         fA = interpolate.interp1d(xA,AS,kind='cubic')
         AS = fA(IS)
     
-    if modamp == True:
+    if modamp > 0:
         
         #interpolate distance to size of mod audio sample
         dfac = len(AS)/len(dists)
@@ -77,7 +81,7 @@ def earcon_audio(audarr,earcon,VMag,X,dists,s,modfreq=True,modamp=True):
         D = fd(dxnew)
 
         #apply amplitude modulation (I used exponential because simple multiplication didn't have a usable effect)
-        ampchange = 1.25
+        ampchange = 1.0 + modamp
         AS = AS[:] / (D[:]**ampchange)
 
     return AS
