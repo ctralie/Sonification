@@ -44,12 +44,21 @@ def sample_cubic_spline(xs, ys, t):
         c[j] = z[j]-mu[j]*c[j+1]
         b[j] = (a[j+1]-a[j])/h[j] - h[j]*(c[j+1]+2*c[j])/3
         d[j] = (c[j+1]-c[j])/(3*h[j])
-    spline = np.array([])
+    s1 = np.array([])
+    s2 = np.array([])
+    s3 = np.array([])
     for i in range(n):
         if i == n-1:
             ti = t[(t >= xs[i])*(t <= xs[i+1])]
         else:
             ti = t[(t >= xs[i])*(t < xs[i+1])]
+        # Direct spline function
         f = a[i] + b[i]*(ti-xs[i]) + c[i]*(ti-xs[i])**2 + d[i]*(ti-xs[i])**3
-        spline = np.concatenate((spline, f))
-    return spline
+        s1 = np.concatenate((s1, f))
+        # Derivative function
+        f = b[i] + 2*c[i]*(ti-xs[i]) + 3*d[i]*(ti-xs[i])**2
+        s2 = np.concatenate((s2, f))
+        # Second derivative function
+        f = 2*c[i] + 6*d[i]*(ti-xs[i])
+        s3 = np.concatenate((s3, f))
+    return [s1, s2, s3]
