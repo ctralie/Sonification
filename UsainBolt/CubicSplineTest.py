@@ -8,15 +8,27 @@ ys = np.arange(11)*10
 t = np.linspace(0, 9.58, int(44100*9.58)) # How to sample
 [position, velocity, acceleration] = sample_cubic_spline(xs, ys, t)
 
+fs = 44100
+
+v = velocity
+
+vscale = 2**v
+vscaled = np.reshape(vscale,(1,len(vscale)))
+vscaledd = np.cumsum(vscaled, axis=0)
+pscaled = np.cumsum(vscaledd, axis=1)
+pnew = pscaled.flatten()
+vnew = vscaledd.flatten()
+
+
 plt.figure(figsize=(6, 18))
 plt.subplot(311)
-plt.plot(t, position)
+plt.plot(t, pnew)
 plt.xlabel("Time (Sec)")
 plt.ylabel("Position (Meters)")
 plt.title("Position")
 
 plt.subplot(312)
-plt.plot(t, velocity)
+plt.plot(t, vnew)
 plt.xlabel("Time (Sec)")
 plt.ylabel("Velocity (Meters/Sec)")
 plt.title("Velocity")
