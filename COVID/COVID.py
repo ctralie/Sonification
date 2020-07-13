@@ -9,51 +9,83 @@ Created on Fri Jul 10 13:37:50 2020
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import interpolate
+import sys
+sys.path.append("..")
+from SlidingWindow import *
 
-def get_US_data():
+def get_data(countrycode):
 
     data = pd.read_csv('COVIDDATA.csv')
     data = data.to_numpy()
     
-    notUS = True
+    notC = True
     startindex = 0
-    while notUS:
-        if data[startindex,1] == "US":
-            notUS = False
+    while notC:
+        if data[startindex,1] == countrycode:
+            notC = False
         else:
             startindex += 1
             
-    isUS = True
+    isC = True
     endindex = startindex
-    while isUS:
-        if data[endindex,1] == "US":
+    while isC:
+        if data[endindex,1] == countrycode:
             endindex += 1
         else:
-            isUS = False
+            isC = False
     
-    USData = data[startindex:endindex]
-    return USData
+    return data[startindex:endindex]
+
+def get_info(Data):
+    cases = (Data[:,4]).astype(int)
+    deaths = (Data[:,6]).astype(int)
+    return cases, deaths
+
+def get_interp(USC,USD,ITC,ITD,DAF):
+    IUSC = interp_data(USC,DAF)
+    IUSD = interp_data(USD,DAF)
+    IITC = interp_data(ITC,DAF)
+    IITD = interp_data(ITD,DAF)
+    return IUSC,IUSD,IITC,IITD
+
+def interp_data(Data, DAF):
+    #Interpolate Time Series to new size
+    fac = len(DAF)/len(Data)
+    N = len(Data)
+    x = np.linspace(0, 1, N)
+    f = interpolate.interp1d(x,Data,kind='cubic')
+    xnew = np.linspace(0, 1, int(fac*N))
+    return f(xnew)
+
+def create_2D_shape(Cases,Deaths):
+    s = len(Cases)
+    Shape = np.zeros((s,2))
+    Shape[:,0] = Cases[:]
+    Shape[:,1] = Deaths[:]
+    return Shape
 
 #covid data from january 20th to july 10th 2020
-USData = get_US_data()
+UScode = "US"
+ITcode = "IT"
+USData = get_data(UScode)
+ITData = get_data(ITcode)
 
-newcases = USData[:,4]
-cumcases = USData[:,5]
-newdeaths = USData[:,6]
-cumdeaths = USData[:,7]
+USC,USD = get_info(USData)
+ITC,ITD = get_info(ITData)
 
-NC = newcases.astype(int)
-CC = cumcases.astype(int)
-ND = newdeaths.astype(int)
-CD = cumdeaths.astype(int)
+fs = 44100
+seconds = 10
+DesiredAudioFrame = np.linspace(0, 1, int(fs*seconds))
 
-plt.figure(figsize=(16, 16))
-plt.subplot(411)
-plt.plot(NC)
-plt.subplot(412)
-plt.plot(CC)
-plt.subplot(413)
-plt.plot(ND)
-plt.subplot(414)
-plt.plot(CD)
-plt.tight_layout()
+IUSC,IUSD,IITC,IITD = get_interp(USC,USD,ITC,ITD,DesiredAudioFrame)
+
+USShape = create_2D_shape(IUSC,IUSD)
+ITShape = create_2D_shape(IITC,IITD)
+
+plt.scatter(USShape[:, 0], USShape[:, 1])
+plt.show()
+plt.figure()
+plt.scatter(ITShape[:, 0], ITShape[:, 1])
+plt.show()
+
