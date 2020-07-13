@@ -39,8 +39,16 @@ def get_data(countrycode):
 
 def get_info(Data):
     cases = (Data[:,4]).astype(int)
+    cases = make_positive(cases)
     deaths = (Data[:,6]).astype(int)
+    deaths = make_positive(deaths)
     return cases, deaths
+
+def make_positive(Data):
+    for i in range(len(Data)):
+        if Data[i] < 0:
+            Data[i] *= -1
+    return Data
 
 def get_interp(USC,USD,ITC,ITD,DAF):
     IUSC = interp_data(USC,DAF)
@@ -83,9 +91,15 @@ IUSC,IUSD,IITC,IITD = get_interp(USC,USD,ITC,ITD,DesiredAudioFrame)
 USShape = create_2D_shape(IUSC,IUSD)
 ITShape = create_2D_shape(IITC,IITD)
 
-plt.scatter(USShape[:, 0], USShape[:, 1])
+plt.scatter(USShape[:, 0], USShape[:, 1], c = DesiredAudioFrame)
+plt.xlabel("New Cases Per Day")
+plt.ylabel("New Deaths Per Day")
+plt.title("United States")
 plt.show()
 plt.figure()
-plt.scatter(ITShape[:, 0], ITShape[:, 1])
+plt.scatter(ITShape[:, 0], ITShape[:, 1], c = DesiredAudioFrame)
+plt.xlabel("New Cases Per Day")
+plt.ylabel("New Deaths Per Day")
+plt.title("Italy")
 plt.show()
 
