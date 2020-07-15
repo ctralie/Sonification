@@ -18,7 +18,11 @@ from SlidingWindow import *
 from Viterbi import getCSM
 
 def get_data(countrycode):
-
+    
+    """
+    country code = 2 char string for country
+    returns said countries data
+    """
     data = pd.read_csv('COVIDDATA.csv')
     data = data.to_numpy()
     
@@ -41,6 +45,12 @@ def get_data(countrycode):
     return data[startindex:endindex]
 
 def get_info(Data):
+    
+    """
+    data = matrix of data
+    returns the cases and deaths per day 
+    """
+    
     cases = (Data[:,4]).astype(int)
     cases = make_positive(cases)
     deaths = (Data[:,6]).astype(int)
@@ -48,12 +58,23 @@ def get_info(Data):
     return cases, deaths
 
 def make_positive(Data):
+    
+    """
+    takes virus data matrix
+    returns the data made positive (to correct errors in the data)
+    """
+    
     for i in range(len(Data)):
         if Data[i] < 0:
             Data[i] *= -1
     return Data
 
 def get_interp(USC,USD,ITC,ITD,DAF):
+    
+    """
+    interpolates the data to a new size
+    """
+    
     IUSC = interp_data(USC,DAF)
     IUSD = interp_data(USD,DAF)
     IITC = interp_data(ITC,DAF)
@@ -70,151 +91,193 @@ def interp_data(Data, DAF):
     return f(xnew)
 
 def create_2D_shape(Cases,Deaths):
+    
+    """
+    makes a 2D array of cases and deaths in one matrix
+    """
+    
     s = len(Cases)
     Shape = np.zeros((s,2))
     Shape[:,0] = Cases[:]
     Shape[:,1] = Deaths[:]
     return Shape
  
-def get_country_max(DO,DT):
-    domax = np.max(DO)
-    dtmax = np.max(DT)
-    return domax,dtmax
+def get_country_max(X):
     
-def create_note_grid_arrays(cmax,dmax):
     """
+    gets largest value in matricies
+    """
+    
+    cmax = np.max(X[:,0])
+    dmax = np.max(X[:,1])
+    return cmax,dmax
+
+def scale_data(Data):
+    
+    """
+    scales data down to 0-1 scale
+    """
+    
+    cmax,dmax = get_country_max(Data)
+    Data[:,0] /= cmax
+    Data[:,1] /= dmax
+    return Data
+    
+def create_earcons(cmax,dmax):
+    """
+    MAJ8:
+        a,d
     MAJ7:
-        a,e
+        b,d
     MAJ:
-        a,f
-        b,e
-    MIN:
-        a,g
-        b,f
-        c,e
+        c,d
     MIN7:
-        a,h
-        b,g
-        c,f
-        d,e
-    FDIM:
-        b,h
-        c,g
-        d,f
+        a,e
     DIM:
-        c,h
-        d,g
-    TRI:
-       d,h
+        b,e
+    AUG:
+        c,e
+    MIN:
+        a,f
+    FDIM:
+        b,f
+    TRI7:
+        c,f
     """
     a = 0
-    b =  cmax/3
-    c = 2*cmax/3
-    d =  cmax
-    e = 0
-    f = dmax/3
-    g = 2*dmax/3
-    h = dmax
-    MAJS = np.array([[a, e]])
-    MAJ = np.array([[a,f],[b,e]])
-    MIN = np.array([[a,g],[b,f],[c,e]])
-    MINS = np.array([[a,h],[b,g],[c,f],[d,e]])
-    FDIM = np.array([[b,h],[c,g],[d,f]])
-    DIM = np.array([[c,h],[d,g]])
-    TRI = np.array([[d,h]])
-    return MAJS,MAJ,MIN,MINS,FDIM,DIM,TRI
+    b = cmax/2
+    c = cmax
+    d = 0
+    e = dmax/2
+    f = dmax
+    
+    MAJW = ([a,d])
+    MAJS = ([b,d])
+    MAJ = ([c,d])
+    MINS = ([a,e])
+    DIM = ([b,e])
+    AUG = ([c,e])
+    MIN = ([a,f])
+    FDIM = ([b,f])
+    TRI = ([c,f])
+    earcons = (MAJW,MAJS,MAJ,MINS,DIM,AUG,MIN,FDIM,TRI)
+    return earcons
 
-def make_chord_arrays(Seconds,Types):
+def make_chord_arrays(Seconds,Types,freq):
     
     fs = 44100
     note = np.linspace(0,Seconds,fs*Seconds)
     numchords = int(len(Types))
 
-    one = note * 440 * (2**(0/12))
-    majthree = note * 440 * (2**(5/12))
-    minthree = note * 440 * (2**(4/12))
-    majfive = note * 440 * (2**(7/12))
-    minfive = note * 440 * (2**(6/12))
-    dimfive = note * 440 * (2**(5/12))
-    minseven = note * 440 * (2**(10/12))
-    majseven = note * 440 * (2**(11/12))
-    dimseven = note * 440 * (2**(9/12))
-    disonance = note * 440 * (2**(3/12))
-    one = np.sin(2*np.pi*one)
-    majthree = np.sin(2*np.pi*majthree)
-    minthree = np.sin(2*np.pi*minthree)
-    majfive = np.sin(2*np.pi*majfive)
-    minfive = np.sin(2*np.pi*minfive)
-    dimfive = np.sin(2*np.pi*dimfive)
-    minseven = np.sin(2*np.pi*minseven)
-    majseven = np.sin(2*np.pi*majseven)
-    dimseven = np.sin(2*np.pi*dimseven)
-    disonance = np.sin(2*np.pi*disonance)
+    base = note * freq * (2**(0/12))
+    three = note * freq * (2**(3/12))
+    four = note * freq * (2**(4/12))
+    six = note * freq * (2**(6/12))
+    seven = note * freq * (2**(7/12))
+    eight = note * freq * (2**(8/12))
+    nine = note * freq * (2**(9/12))
+    ten = note * freq * (2**(10/12))
+    eleven = note * freq * (2**(11/12))
+    twelve = note * freq * (2**(12/12))
+    
+    base = np.sin(2*np.pi*base)
+    three = np.sin(2*np.pi*three)
+    four = np.sin(2*np.pi*four)
+    six = np.sin(2*np.pi*six)
+    seven = np.sin(2*np.pi*seven)
+    eight = np.sin(2*np.pi*eight)
+    nine = np.sin(2*np.pi*nine)
+    ten = np.sin(2*np.pi*ten)
+    eleven = np.sin(2*np.pi*eleven)
+    twelve = np.sin(2*np.pi*twelve)
     
     Chords = np.zeros((len(note),numchords))
 
     for i in range(numchords):
-        if Types[i] == "Major7":
-            Chords[:,i] = one + majthree + majfive + majseven
-        elif Types[i] == "Major":
-            Chords[:,i] = one + majthree + majfive
-        elif Types[i] == "Minor": 
-            Chords[:,i] = one + minthree + majfive
+        if Types[i] == "MajorW":
+            Chords[:,i] = base + four + seven + twelve
+        elif Types[i] == "Major7":
+            Chords[:,i] = base + four + seven + eleven
+        elif Types[i] == "Major": 
+            Chords[:,i] = base + four + seven
         elif Types[i] == "Minor7":
-            Chords[:,i] = one + minthree + majfive + minseven
-        elif Types[i] == "FullyDim":
-            Chords[:,i] = one + minthree + dimfive + dimseven
+            Chords[:,i] = base + three + seven + ten
         elif Types[i] == "Dim":
-            Chords[:,i] = one + minthree + dimfive
-        elif Types[i] == "Tritone":
-            Chords[:,i] = one + disonance + minfive + dimseven
+            Chords[:,i] = base + three + six
+        elif Types[i] == "Aug":
+            Chords[:,i] = base + four + eight
+        elif Types[i] == "Min":
+            Chords[:,i] = base + three + seven
+        elif Types[i] == "FullyDim":
+            Chords[:,i] = base + three + six + ten
+        elif Types[i] == "Tri":
+            Chords[:,i] = base + three + six + nine
+            
     return Chords
 
 def amp_mod_audio(dists,AS,modamp):
     
-    Audio = AS
-    x = 0
+    #interpolate distance to size of mod audio sample
+    dfac = len(AS)/len(dists)
+    dN = len(dists)
+    dx = np.linspace(0, 1, dN)
+    fd = interpolate.interp1d(dx,dists,kind='cubic')
+    dxnew = np.linspace(0, 1, int(dfac*dN))
+    D = fd(dxnew)
     
-    for i in range(len(dists[x])):
-        dfac = len(AS)/len(dists)
-        dN = len(dists)
-        dx = np.linspace(0, 1, dN)
-        fd = interpolate.interp1d(dx,dists[:,i],kind='cubic')
-        dxnew = np.linspace(0, 1, int(dfac*dN))
-        D = fd(dxnew)
-        
-        #apply amplitude modulation (I used exponential because simple multiplication didn't have a usable effect)
-        ampchange = 1.0 + modamp
-        Audio += AS[:] / (D[:]**ampchange)
-        x += 1
-        
+    #apply amplitude modulation (I used exponential because simple multiplication didn't have a usable effect)
+    ampchange = 1.0 + modamp
+    Audio = AS[:] / (D[:]**ampchange)
+    
+    for i in range(len(Audio)):
+        if Audio[i] < 0:
+            Audio[i] = 0
+    
     return Audio
 
-def create_audio(Data,MAJS,MAJ,MIN,MINS,FDIM,DIM,TRI,Chords):
+def create_audio(Data,Earcons,Chords,modamp):
     
-    modamp = .25
+    Audio = 0
+    for i in range(len(Earcons)):
+        dists = getCSM(Data, Earcons[i])
+        newaudio = amp_mod_audio(dists,Chords[:,i],modamp)
     
-    MAJS = getCSM(Data, MAJS)
-    AMJS = amp_mod_audio(MAJS,Chords[:,0],modamp)
+    return Audio   
     
-    MAJ = getCSM(Data, MAJ)
-    AMJ = amp_mod_audio(MAJ,Chords[:,1],modamp)
+    #return AMJS,AMJ,AMN,AMNS,AFD,ADM,ATT
+if __name__ == '__main__':    
+    #covid data from january 20th to july 10th 2020
+    UScode = "US"
+    ITcode = "IT"
+    USData = get_data(UScode)
+    ITData = get_data(ITcode)
     
-    MIN = getCSM(Data, MIN)
-    AMN = amp_mod_audio(MIN,Chords[:,2],modamp)
+    #get deaths and cases from each country
+    USC,USD = get_info(USData)
+    ITC,ITD = get_info(ITData)
     
-    MINS = getCSM(Data, MINS)
-    AMNS = amp_mod_audio(MINS,Chords[:,3],modamp)
+    #interpolate
+    fs = 44100
+    seconds = 10
+    DesiredAudioFrame = np.linspace(0, seconds, int(fs*seconds))
+    IUSC,IUSD,IITC,IITD = get_interp(USC,USD,ITC,ITD,DesiredAudioFrame)
     
-    FDIM = getCSM(Data, FDIM)
-    AFD = amp_mod_audio(FDIM,Chords[:,4],modamp)
+    USShape = create_2D_shape(IUSC,IUSD)
+    ITShape = create_2D_shape(IITC,IITD)
     
-    DIM = getCSM(Data, DIM)
-    ADM = amp_mod_audio(DIM,Chords[:,5],modamp)
+    USShape = scale_data(USShape)
+    ITShape = scale_data(ITShape)
     
-    TRI = getCSM(Data, TRI)
-    ATT = amp_mod_audio(TRI,Chords[:,6],modamp)
+    uscmax,usdmax = get_country_max(USShape)
+    itcmax,itdmax = get_country_max(ITShape)
     
-    Audio = AMJS + AMJ + AMN + AMNS + AFD + ADM + ATT
-    return Audio    
+    Types = ["MajorW","Major7","Major","Minor7","Dim","Aug","Minor","FullyDim","Tri"]
+    freq = 440
+    Chords = make_chord_arrays(seconds,Types,freq)
     
+    USEarcons = create_earcons(uscmax,usdmax)
+    ITEarcons = create_earcons(itcmax,itdmax)
+    
+    modamp = 1
+    USAudio = create_audio(USShape,USEarcons,Chords,modamp)
+    ITAudio = create_audio(ITShape,ITEarcons,Chords,modamp)
