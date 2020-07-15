@@ -160,7 +160,7 @@ def create_earcons(cmax,dmax):
     MIN = ([a,f])
     FDIM = ([b,f])
     TRI = ([c,f])
-    earcons = (MAJW,MAJS,MAJ,MINS,DIM,AUG,MIN,FDIM,TRI)
+    earcons = np.array([MAJW,MAJS,MAJ,MINS,DIM,AUG,MIN,FDIM,TRI])
     return earcons
 
 def make_chord_arrays(Seconds,Types,freq):
@@ -238,9 +238,9 @@ def amp_mod_audio(dists,AS,modamp):
 def create_audio(Data,Earcons,Chords,modamp):
     
     Audio = 0
+    Dists = getCSM(Data, Earcons)
     for i in range(len(Earcons)):
-        dists = getCSM(Data, Earcons[i])
-        newaudio = amp_mod_audio(dists,Chords[:,i],modamp)
+        newaudio = amp_mod_audio(Dists[:, i],Chords[:,i],modamp)
     
     return Audio   
     
