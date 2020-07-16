@@ -69,33 +69,27 @@ def make_positive(Data):
             Data[i] *= -1
     return Data
 
-def get_interp(USC,USD,ITC,ITD,DAF):
+def get_interp(C,D,DAF):
     
     """
     interpolates the data to a new size
-    """
-    
-    IUSC = interp_data(USC,DAF)
-    IUSD = interp_data(USD,DAF)
-    IITC = interp_data(ITC,DAF)
-    IITD = interp_data(ITD,DAF)
-    return IUSC,IUSD,IITC,IITD
+    """    
+    IC = interp_data(C,DAF)
+    ID = interp_data(D,DAF)
+    return IC,ID
 
 def interp_data(Data, DAF):
     #Interpolate Time Series to new size
-    fac = len(DAF)/len(Data)
     N = len(Data)
     x = np.linspace(0, 1, N)
     f = interpolate.interp1d(x,Data,kind='linear')
-    xnew = np.linspace(0, 1, int(fac*N))
+    xnew = np.linspace(0, 1, len(DAF))
     return f(xnew)
 
 def create_2D_shape(Cases,Deaths):
-    
     """
     makes a 2D array of cases and deaths in one matrix
     """
-    
     s = len(Cases)
     Shape = np.zeros((s,2))
     Shape[:,0] = Cases[:]
@@ -103,21 +97,17 @@ def create_2D_shape(Cases,Deaths):
     return Shape
  
 def get_country_max(X):
-    
     """
     gets largest value in matricies
     """
-    
     cmax = np.max(X[:,0])
     dmax = np.max(X[:,1])
     return cmax,dmax
 
 def scale_data(Data):
-    
     """
     scales data down to 0-1 scale
     """
-    
     cmax,dmax = get_country_max(Data)
     Data[:,0] /= cmax
     Data[:,1] /= dmax
@@ -144,10 +134,10 @@ def create_earcons(cmax,dmax):
     TRI7:
         c,f
     """
-    a = 0
+    a = cmax/10000
     b = cmax/2
     c = cmax
-    d = 0
+    d = dmax/10000
     e = dmax/2
     f = dmax
     
@@ -163,88 +153,55 @@ def create_earcons(cmax,dmax):
     earcons = np.array([MAJW,MAJS,MAJ,MINS,DIM,AUG,MIN,FDIM,TRI])
     return earcons
 
-def make_chord_arrays(Seconds,Types,freq):
-    
+def make_chord_arrays(Seconds,Types,freq):    
     fs = 44100
     note = np.linspace(0,Seconds,fs*Seconds)
     numchords = int(len(Types))
-
-    base = note * freq * (2**(0/12))
-    three = note * freq * (2**(3/12))
-    four = note * freq * (2**(4/12))
-    six = note * freq * (2**(6/12))
-    seven = note * freq * (2**(7/12))
-    eight = note * freq * (2**(8/12))
-    nine = note * freq * (2**(9/12))
-    ten = note * freq * (2**(10/12))
-    eleven = note * freq * (2**(11/12))
-    twelve = note * freq * (2**(12/12))
-    
-    base = np.sin(2*np.pi*base)
-    three = np.sin(2*np.pi*three)
-    four = np.sin(2*np.pi*four)
-    six = np.sin(2*np.pi*six)
-    seven = np.sin(2*np.pi*seven)
-    eight = np.sin(2*np.pi*eight)
-    nine = np.sin(2*np.pi*nine)
-    ten = np.sin(2*np.pi*ten)
-    eleven = np.sin(2*np.pi*eleven)
-    twelve = np.sin(2*np.pi*twelve)
-    
+    sins = [np.sin(2*np.pi*note*freq*(2**(i/12))) for i in range(13)]    
     Chords = np.zeros((len(note),numchords))
-
+    '''
+    chords = {'MajorW':[0, 4, 7, 12], 'Major7':[0, 4, 7, 11]}
+    for i, typ in enumerate(Types):
+        indices = chords[typ]
+        # Loop through and sum sinusoids at these indices, and store away
+    '''
     for i in range(numchords):
         if Types[i] == "MajorW":
-            Chords[:,i] = base + four + seven + twelve
+            Chords[:,i] = sins[0] + sins[4] + sins[7] + sins[12]
         elif Types[i] == "Major7":
-            Chords[:,i] = base + four + seven + eleven
+            Chords[:,i] = sins[0] + sins[4] + sins[7] + sins[11]
         elif Types[i] == "Major": 
-            Chords[:,i] = base + four + seven
+            Chords[:,i] = sins[0] + sins[4] + sins[7]
         elif Types[i] == "Minor7":
-            Chords[:,i] = base + three + seven + ten
+            Chords[:,i] = sins[0] + sins[3] + sins[7] + sins[10]
         elif Types[i] == "Dim":
-            Chords[:,i] = base + three + six
+            Chords[:,i] = sins[0] + sins[3] + sins[6]
         elif Types[i] == "Aug":
-            Chords[:,i] = base + four + eight
-        elif Types[i] == "Min":
-            Chords[:,i] = base + three + seven
+            Chords[:,i] = sins[0] + sins[4] + sins[8]
+        elif Types[i] == "Minor":
+            Chords[:,i] = sins[0] + sins[3] + sins[7]
         elif Types[i] == "FullyDim":
-            Chords[:,i] = base + three + six + ten
+            Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[10]
         elif Types[i] == "Tri":
-            Chords[:,i] = base + three + six + nine
-            
+            Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[9]
     return Chords
 
 def amp_mod_audio(dists,AS,modamp):
-    
-    #interpolate distance to size of mod audio sample
-    dfac = len(AS)/len(dists)
-    dN = len(dists)
-    dx = np.linspace(0, 1, dN)
-    fd = interpolate.interp1d(dx,dists,kind='cubic')
-    dxnew = np.linspace(0, 1, int(dfac*dN))
-    D = fd(dxnew)
-    
     #apply amplitude modulation (I used exponential because simple multiplication didn't have a usable effect)
     ampchange = 1.0 + modamp
-    Audio = AS[:] / (D[:]**ampchange)
-    
-    for i in range(len(Audio)):
-        if Audio[i] < 0:
-            Audio[i] = 0
-    
+    Audio = AS[:] / (0.05 + dists[:]**ampchange)
+    #Audio = AS[:]*np.exp(-dists[:]**ampchange)
     return Audio
 
 def create_audio(Data,Earcons,Chords,modamp):
-    
-    Audio = 0
+    Audio = np.zeros((len(Data)))
     Dists = getCSM(Data, Earcons)
+    Dists = Dists/np.max(Dists)    
     for i in range(len(Earcons)):
-        newaudio = amp_mod_audio(Dists[:, i],Chords[:,i],modamp)
-    
-    return Audio   
-    
-    #return AMJS,AMJ,AMN,AMNS,AFD,ADM,ATT
+        newaudio = amp_mod_audio(Dists[:,i],Chords[:,i],modamp)
+        Audio += newaudio    
+    return Audio
+
 if __name__ == '__main__':    
     #covid data from january 20th to july 10th 2020
     UScode = "US"
@@ -256,11 +213,13 @@ if __name__ == '__main__':
     USC,USD = get_info(USData)
     ITC,ITD = get_info(ITData)
     
-    #interpolate
+    #interpolate 
     fs = 44100
-    seconds = 10
+    seconds = 1
     DesiredAudioFrame = np.linspace(0, seconds, int(fs*seconds))
-    IUSC,IUSD,IITC,IITD = get_interp(USC,USD,ITC,ITD,DesiredAudioFrame)
+    IUSC,IUSD = get_interp(USC,USD,DesiredAudioFrame)
+    IITC,IITD = get_interp(ITC,ITD,DesiredAudioFrame)
+    
     
     USShape = create_2D_shape(IUSC,IUSD)
     ITShape = create_2D_shape(IITC,IITD)
@@ -278,6 +237,6 @@ if __name__ == '__main__':
     USEarcons = create_earcons(uscmax,usdmax)
     ITEarcons = create_earcons(itcmax,itdmax)
     
-    modamp = 1
+    modamp = .25
     USAudio = create_audio(USShape,USEarcons,Chords,modamp)
     ITAudio = create_audio(ITShape,ITEarcons,Chords,modamp)
