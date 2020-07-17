@@ -213,8 +213,8 @@ def create_earcons(cmax,dmax,size):
     TRI7:
         c,f
     """
-    x = np.linspace(cmax/10000,cmax,size)
-    y = np.linspace(dmax/10000,dmax,size)
+    x = np.linspace(cmax/10000,(cmax/5)*4,size)
+    y = np.linspace(dmax/10000,(dmax/5)*4,size)
     X,Y = np.meshgrid(x,y)
     E = np.array([X.flatten(), Y.flatten()]).T
     return E
@@ -241,7 +241,7 @@ def make_chord_arrays(Seconds,Types,freq):
     fs = 44100
     note = np.linspace(0,Seconds,fs*Seconds)
     numchords = int(len(Types))
-    sins = [np.sin(2*np.pi*note*freq*(2**(i/12))) for i in range(13)]    
+    sins = [np.sin(2*np.pi*note*freq*(2**(i/12))) for i in range(15)]    
     Chords = np.zeros((len(note),numchords))
     '''
     chords = {'MajorW':[0, 4, 7, 12], 'Major7':[0, 4, 7, 11]}
@@ -268,6 +268,8 @@ def make_chord_arrays(Seconds,Types,freq):
             Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[10]
         elif Types[i] == "Tri":
             Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[9]
+        elif Types[i] == "Minor9":
+            Chords[:,i] = sins[0] + sins[3] + sins[7] + sins[10] + sins[14]
     return Chords
 
 def amp_mod_audio(Dists,AS,modamp):
@@ -290,7 +292,7 @@ def amp_mod_audio(Dists,AS,modamp):
 
     """
     ampchange = 1.0 + modamp
-    Audio = AS[:] / (0.01 + Dists[:]**ampchange)
+    Audio = AS[:] / (0.1 + Dists[:]**ampchange)
     #Audio = AS[:]*np.exp(-Dists[:]**ampchange)
     return Audio
 
@@ -390,7 +392,7 @@ def do_covid_calc(countrycode,DesiredAudioFrame,Chords,rcsize,popsize):
     Earcons = create_earcons(cmax,dmax,rcsize)
     
     #create audio
-    modamp = 2
+    modamp = 1
     Audio = create_audio(Data,Earcons,Chords,modamp)
     
     #scale up  data/earcons for graph
@@ -418,7 +420,7 @@ if __name__ == '__main__':
     DesiredAudioFrame = np.linspace(0, seconds, int(fs*seconds))
 
     #creates chords to be used for amplitude modulation
-    Types = ["MajorW","Major7","Major","Minor7","Dim","Aug","Minor","FullyDim","Tri"]
+    Types = ["Major7","Minor7","Minor9","Tri"]
     freq = 440
     Chords = make_chord_arrays(seconds,Types,freq)
     rcsize = int(np.sqrt(len(Types)))
