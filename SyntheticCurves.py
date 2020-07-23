@@ -7,6 +7,8 @@ random rotations/translations/deformations/reparameterizations to existing curve
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interp
+import matplotlib.animation as animation
+from mpl_toolkits.mplot3d import Axes3D
 import sys
 
 
@@ -343,11 +345,105 @@ def getConeHelix(c, NPeriods, pt):
     X[:, 2] = zt
     return X
 
+
+def get_lims(X, dim, pad=0.1):
+    """
+    Return the limits around a dimension with some padding
+    Parameters
+    ----------
+    X: ndarray(N, d)
+        Point cloud in d dimensions
+    dim: int
+        Dimension to extract limits from
+    pad: float
+        Factor by which to pad
+    """
+    xlims = [np.min(X[:, dim]), np.max(X[:, dim])]
+    xlims[0] = xlims[0]-(xlims[1]-xlims[0])*pad
+    xlims[1] = xlims[1]+(xlims[1]-xlims[0])*pad
+    return xlims
+
+#A class for doing animation of the sliding window
+class CurveAnimator(animation.FuncAnimation):
+    """
+    Create a video of a sampled curve evolving over time
+    """
+    def __init__(self, X, filename, fps=30, figsize=(8, 8), 
+                title = 'Evolving Curve Animation', bitrate=10000, cmap='magma_r'):
+        """
+        Parameters
+        ----------
+        X: ndarray(N, d)
+            A point cloud
+        filename: string
+            Output name of video
+        fps: int
+            Frames per second of the video
+        figsize: tuple(2)
+            Width x height of figure
+        title: string
+            Title of the video
+        bitrate: int
+            Output bitrate of the video
+        cmap: string
+            The colormap to use
+        """
+        assert(X.shape[1] >= 2)
+        self.fig = plt.figure(figsize=figsize)
+        self.X = X
+        self.bgcolor = (0.2, 0.2, 0.2)
+        t = np.linspace(0, 1, X.shape[0])
+        c = plt.get_cmap(cmap)
+        C = c(np.array(np.round(255*t), dtype=np.int32))
+        self.C = C[:, 0:3]
+        self.xlims = get_lims(X, 0, 0.2)
+        self.ylims = get_lims(X, 1, 0.2)
+        self.filename = filename
+
+        ax = None
+        if X.shape[1] > 2:
+            ax = self.fig.add_subplot(111, projection='3d')
+            ax.set_xlim(get_lims(X, 0))
+            ax.set_ylim(get_lims(X, 1))
+            ax.set_zlim(get_lims(X, 2))
+        else:
+            ax = self.fig.add_subplot(111)
+            ax.set_xlim(get_lims(X, 0))
+            ax.set_ylim(get_lims(X, 1))
+            ax.set_facecolor(self.bgcolor)
+        ax.set_facecolor(self.bgcolor)
+        ax.set_xlabel("Column 1")
+        ax.set_ylabel("Column 2")
+        if X.shape[1] > 2:
+            ax.set_zlabel("Column 3")
+        self.ax = ax
+
+        #Setup animation thread
+        self.n_frames = X.shape[0]
+        animation.FuncAnimation.__init__(self, self.fig, func = self._draw_frame, frames = self.n_frames, interval = 10)
+
+        #Write movie
+        FFMpegWriter = animation.writers['ffmpeg']
+        metadata = dict(title=title, comment='Evolving curve animation')
+        writer = FFMpegWriter(fps=fps, metadata=metadata, bitrate = bitrate)
+        self.save(filename, writer = writer)
+
+    def _draw_frame(self, i):
+        print("Rendering frame {} of {} of {}".format(i+1, self.n_frames, self.filename))
+        X = self.X
+        c = self.C[i, :]
+        c = c[None, :]
+        if X.shape[1] == 2:
+            self.ax.scatter([X[i, 0]], [X[i, 1]], c=c)
+        elif X.shape[1] >= 3:
+            self.ax.scatter([X[i, 0]], [X[i, 1]], [X[i, 2]], c=c)
+        self.ax.set_title("Frame {}".format(i+1))
+
 if __name__ == '__main__':
-    from mpl_toolkits.mplot3d import Axes3D
-    t = np.linspace(0, 1, 1000)
+    t = np.linspace(0, 1, 180)
     X = getVivianiFigure8(2, t)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=t)
-    plt.show()
+    CurveAnimator(X, "viviani.mp4", fps=30, title='Viviani Figure 8')
+
+    t = np.linspace(0, 1, 100)
+    X = getEpicycloid(3, 1, t)
+    CurveAnimator(X, "epicycloid.mp4", fps=10, title='3-1 Epicycloid')
