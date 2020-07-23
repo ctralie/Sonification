@@ -16,6 +16,7 @@ sys.path.append("..")
 sys.path.append('../Viterbi')
 from SlidingWindow import *
 from Viterbi import getCSM
+from SyntheticCurves import*
 
 def get_data(countrycode):
     """
@@ -213,13 +214,13 @@ def create_earcons(cmax,dmax,size):
     TRI7:
         c,f
     """
-    x = np.linspace(cmax/10000,(cmax/5)*4,size)
-    y = np.linspace(dmax/10000,(dmax/5)*4,size)
+    x = np.linspace(cmax/10000,cmax,size)
+    y = np.linspace(dmax/10000,dmax,size)
     X,Y = np.meshgrid(x,y)
     E = np.array([X.flatten(), Y.flatten()]).T
     return E
 
-def make_chord_arrays(Seconds,Types,freq):
+def make_chord_arrays(Seconds,freq,numchords):
     """
     Returns array of audio arrays
 
@@ -240,36 +241,67 @@ def make_chord_arrays(Seconds,Types,freq):
     """
     fs = 44100
     note = np.linspace(0,Seconds,fs*Seconds)
-    numchords = int(len(Types))
-    sins = [np.sin(2*np.pi*note*freq*(2**(i/12))) for i in range(15)]    
+    
+    sins = [np.sin(2*np.pi*note*freq*(2**(i/12))) for i in range(21)]
+    #sint = [np.sin(2*np.pi*note*freq*(2**((i+1)/12))) for i in range(21)]
+    #sinth = [np.sin(2*np.pi*note*freq*(2**((i+2)/12))) for i in range(21)]
+    #sinf = [np.sin(2*np.pi*note*freq*(2**((i+3)/12))) for i in range(21)]
+    
     Chords = np.zeros((len(note),numchords))
+    
+    Chords[:,0] = sins[0]
+    Chords[:,1] = sins[4]
+    Chords[:,2] = sins[7]
+    Chords[:,3] = sins[4]
+    Chords[:,4] = sins[7]
+    Chords[:,5] = sins[10]
+    Chords[:,6] = sins[7]
+    Chords[:,7] = sins[10]
+    Chords[:,8] = sins[12]
+    
     '''
     chords = {'MajorW':[0, 4, 7, 12], 'Major7':[0, 4, 7, 11]}
     for i, typ in enumerate(Types):
         indices = chords[typ]
         # Loop through and sum sinusoids at these indices, and store away
-    '''
+    
+    Chords[:,0] = sins[0] + sins[7] + sins[11] + sins[16] + sins[19]
+    Chords[:,1] = sint[0] + sint[4] + sint[10] + sint[14] + sint[17]
+    Chords[:,2] = sinth[0] + sinth[7] + sinth[10] + sinth[14] + sinth[17]
+    Chords[:,3] = sint[0] + sint[4] + sint[10] + sint[14] + sint[17]
+    Chords[:,4] = sins[0] + sins[3] + sins[10] + sins[14] + sins[20]
+    Chords[:,5] = sins[0] + sins[5] + sins[12] + sins[14] + sins[20]
+    Chords[:,6] = sinth[0] + sinth[7] + sinth[10] + sinth[14] + sinth[17]
+    Chords[:,7] = sins[0] + sins[5] + sins[12] + sins[14] + sins[20]
+    Chords[:,8] = sinf[0] + sinf[3] + sinf[6] + sinf[9] + sinf[12] + sinf[15]
+    
     for i in range(numchords):
-        if Types[i] == "MajorW":
+        if Types[i] == "Major7":
+            Chords[:,i] = sins[0] + sins[7] + sins[11] + sins[16] + sins[19]
+        elif Types[i] == "Tri":
+            Chords[:,i] = sinf[0] + sinf[3] + sinf[6] + sinf[9] + sinf[12] + sinf[15]
+        elif Types[i] == "Minor9":
+            Chords[:,i] = sinth[0] + sinth[7] + sinth[10] + sinth[14] + sinth[17]
+        elif Types[i] == "Dom9":
+            Chords[:,i] == sint[0] + sint[4] + sint[10] + sint[14] + sint[17]
+        elif Types[i] == "7thing":
+            Chords[:,i] = sins[0] + sins[5] + sins[12] + sins[14] + sins[20]
+        elif Types[i] == "MajorW":
             Chords[:,i] = sins[0] + sins[4] + sins[7] + sins[12]
-        elif Types[i] == "Major7":
-            Chords[:,i] = sins[0] + sins[4] + sins[7] + sins[11]
-        elif Types[i] == "Major": 
-            Chords[:,i] = sins[0] + sins[4] + sins[7]
-        elif Types[i] == "Minor7":
-            Chords[:,i] = sins[0] + sins[3] + sins[7] + sins[10]
         elif Types[i] == "Dim":
             Chords[:,i] = sins[0] + sins[3] + sins[6]
         elif Types[i] == "Aug":
             Chords[:,i] = sins[0] + sins[4] + sins[8]
         elif Types[i] == "Minor":
             Chords[:,i] = sins[0] + sins[3] + sins[7]
+        elif Types[i] == "Major": 
+            Chords[:,i] = sins[0] + sins[4] + sins[7]
+        elif Types[i] == "Minor7":
+            Chords[:,i] = sins[0] + sins[3] + sins[7] + sins[10]
         elif Types[i] == "FullyDim":
             Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[10]
-        elif Types[i] == "Tri":
-            Chords[:,i] = sins[0] + sins[3] + sins[6] + sins[9]
-        elif Types[i] == "Minor9":
-            Chords[:,i] = sins[0] + sins[3] + sins[7] + sins[10] + sins[14]
+        '''
+        
     return Chords
 
 def amp_mod_audio(Dists,AS,modamp):
@@ -292,7 +324,7 @@ def amp_mod_audio(Dists,AS,modamp):
 
     """
     ampchange = 1.0 + modamp
-    Audio = AS[:] / (0.1 + Dists[:]**ampchange)
+    Audio = AS[:] / (0.005 + Dists[:]**ampchange)
     #Audio = AS[:]*np.exp(-Dists[:]**ampchange)
     return Audio
 
@@ -339,6 +371,8 @@ def make_casesdeaths_plot(countrycode,Cases,Deaths):
     plt.ylabel("Deaths Per Day")
     plt.xlabel("Days")
     plt.title("New Deaths (" + countrycode + ")")
+    plt.tight_layout()
+    plt.savefig("CasesDeaths.png")
     
 def make_data_earcon_plot(Data,Earcons,countrycode,DesiredAudioFrame):
     
@@ -351,6 +385,8 @@ def make_data_earcon_plot(Data,Earcons,countrycode,DesiredAudioFrame):
     plt.xlabel("Cases Per Day")
     plt.ylabel("Deaths Per Day")
     plt.title("Cases/Deaths Earcons Graph of (" + countrycode + ")")
+    plt.tight_layout()
+    plt.savefig("Earcons.png")
 
 def make_data_earcon_population_plot(Data,Earcons,countrycode,DesiredAudioFrame):
     
@@ -360,9 +396,13 @@ def make_data_earcon_population_plot(Data,Earcons,countrycode,DesiredAudioFrame)
     plt.scatter(Earcons[:, 0], Earcons[:, 1])
     plt.xlim(0-(maxc*.2),maxc*1.2)
     plt.ylim(0-(maxd*.2),maxd*1.2)
-    plt.xlabel("Cases Per Day")
-    plt.ylabel("Deaths Per Day")
+    plt.xlabel("Cases Per Day (% of Population)")
+    plt.ylabel("Deaths Per Day (% of Population)")
     plt.title("Cases/Deaths Earcons Graph of (" + countrycode + ")")
+    plt.tight_layout()
+    plt.savefig("EarconsPop.png")
+    
+    
 
 def do_covid_calc(countrycode,DesiredAudioFrame,Chords,rcsize,popsize):
     
@@ -392,7 +432,7 @@ def do_covid_calc(countrycode,DesiredAudioFrame,Chords,rcsize,popsize):
     Earcons = create_earcons(cmax,dmax,rcsize)
     
     #create audio
-    modamp = 1
+    modamp = 2
     Audio = create_audio(Data,Earcons,Chords,modamp)
     
     #scale up  data/earcons for graph
@@ -405,6 +445,13 @@ def do_covid_calc(countrycode,DesiredAudioFrame,Chords,rcsize,popsize):
     PData = scale_data(GData,popsize,popsize)
     PEarcons = scale_data(GEarcons,popsize,popsize)
     make_data_earcon_population_plot(PData,PEarcons,countrycode,DesiredAudioFrame)
+    
+    #create animate array
+    animateg = np.append(PEarcons,PData,axis=0)
+    
+    #animate Data
+    #CurveAnimator(animateg,"COVIDEarconsUS.mp4","Cases Per Day","Deaths Per Day", fps=3000, title='COVID Earcons US')
+    
     
     return Audio
 
@@ -420,10 +467,10 @@ if __name__ == '__main__':
     DesiredAudioFrame = np.linspace(0, seconds, int(fs*seconds))
 
     #creates chords to be used for amplitude modulation
-    Types = ["Major7","Minor7","Minor9","Tri"]
     freq = 440
-    Chords = make_chord_arrays(seconds,Types,freq)
-    rcsize = int(np.sqrt(len(Types)))
+    csize = 9
+    Chords = make_chord_arrays(seconds,freq,csize)
+    rcsize = int(np.sqrt(csize))
     
     Audio = do_covid_calc(UScode,DesiredAudioFrame,Chords,rcsize,USPop)
     
