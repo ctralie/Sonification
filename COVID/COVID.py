@@ -93,7 +93,7 @@ def get_interp(C,D,DAF):
     Parameters
     ----------
     C:  array()
-        Array of cases to be interpolated
+        Array of cases to be interpolated 
     D:  array()
         Array of deaths to be interpolated
     DAF:  np.linspace()
